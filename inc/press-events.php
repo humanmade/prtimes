@@ -18,12 +18,8 @@ const RSS_NAMESPACE = 'https://prtimes.jp/tv/rss/1.0/';
 /**
  * Fetch PR Times Feed.
  */
-function fetch() {
-	if ( ! Altis\get_config()['hm']['pr-times']['feed']['events'] ) {
-		return;
-	}
-
-	$rss = fetch_feed( PR_Times\PRESS_EVENTS_FEED );
+function fetch( $press_events_url ) {
+	$rss = fetch_feed( $press_events_url );
 
 	if ( is_wp_error( $rss ) ) {
 		return new WP_Error( 'press-events', $rss->get_error_message() );
@@ -89,7 +85,7 @@ function parse( array $items ) :bool {
 			'post_date'    => (string) get_created_date( $item ),
 			'post_status'  => 'publish',
 			'post_content' => (string) $item->get_content(),
-			'post_type'    => PR_Times\CPT_SLUG,
+			'post_type'    => 'post',
 			'meta_input'   => [
 				'prtimes_ref_id'           => (string) $item->get_link(),
 				'prtimes_last_updated'     => (string) $item->get_date( 'Y-m-d H:i:s' ),

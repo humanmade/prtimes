@@ -18,12 +18,12 @@ use WP_Error;
  *
  * @return bool|WP_Error
  */
-function fetch() {
+function fetch( $admin_story_url ) {
 	if ( ! Altis\get_config()['hm']['pr-times']['feed']['story'] ) {
 		return false;
 	}
 
-	$rss = fetch_feed( PR_Times\STORY_FEED );
+	$rss = fetch_feed( $admin_story_url );
 
 	if ( is_wp_error( $rss ) ) {
 		return new WP_Error( 'story', $rss->get_error_message() );
@@ -90,7 +90,7 @@ function parse( array $items ) : bool {
 			'post_date'    => (string) $item->get_date( 'Y-m-d H:i:s' ),
 			'post_status'  => 'publish',
 			'post_content' => (string) $item->get_content(),
-			'post_type'    => PR_Times\CPT_SLUG,
+			'post_type'    => 'post',
 			'meta_input'   => [
 				'prtimes_ref_id'           => (string) $item->get_link(),
 				'prtimes_last_updated'     => (string) $item->get_date( 'Y-m-d H:i:s' ),

@@ -21,7 +21,7 @@ use WP_post;
  */
 function schedule_attachment_upload( int $post_id, WP_post $post ) : void {
 	// Return if post type is not pr-times.
-	if ( ! PR_Times\prtimes_post_type( $post_id ) || $post->post_status !== 'publish' ) {
+	if ( $post->post_status !== 'publish' || ! has_post_category( $post_id ) ) {
 		return;
 	}
 
@@ -78,7 +78,7 @@ function add_custom_post_status( array $query ) : array {
 	if (
 		empty( $parent_id )
 		|| empty( $query['post__in'] )
-		|| ! PR_Times\prtimes_post_type( $parent_id )
+		|| ! has_post_category( $parent_id )
 	) {
 		return $query;
 	}
@@ -96,15 +96,23 @@ function add_custom_post_status( array $query ) : array {
  * @return array
  */
 function change_attachment_status( array $data ) : array {
-	if (
-		$data['post_type'] !== 'attachment'
-		|| empty( $data['post_parent'] )
-		|| ! PR_Times\prtimes_post_type( $data['post_parent'] )
-	) {
+	if ( $data['post_type'] !== 'attachment' || empty( $data['post_parent'] ) || ! has_post_category( $data['post_parent'] ) ) {
 		return $data;
 	}
 
 	$data['post_status'] = PR_Times\POST_STATUS;
 
 	return $data;
+}
+
+/**
+ * Check if post has category.
+ *
+ * @param int $post_id Post ID.
+ *
+ * @return bool
+ */
+function has_post_category( int $post_id ): bool {
+	$category_id = PR_Times\get_press_events_category_id();
+	return has_category( $category_id, $post_id );
 }
