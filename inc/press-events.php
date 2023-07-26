@@ -7,7 +7,6 @@
 
 namespace HM\PR_Times\Press_Events;
 
-use Altis;
 use HM\PR_Times;
 use SimplePie;
 use SimplePie_Item;
@@ -17,6 +16,10 @@ const RSS_NAMESPACE = 'https://prtimes.jp/tv/rss/1.0/';
 
 /**
  * Fetch PR Times Feed.
+ *
+ * @param string $press_events_url Press Events URL.
+ *
+ * @return bool|WP_Error
  */
 function fetch( $press_events_url ) {
 	$rss = fetch_feed( $press_events_url );

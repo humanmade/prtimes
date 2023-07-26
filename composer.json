@@ -1,0 +1,17 @@
+{
+    "name": "humanmade/prtimes",
+    "description": "Human Made PR Times news ingestion plugin",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require-dev": {
+        "humanmade/coding-standards": "^1.1"
+    },
+    "scripts": {
+        "lint": "vendor/bin/phpcs --standard=phpcs.ruleset.xml . -s"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
