@@ -16,6 +16,8 @@ use WP_Error;
 /**
  * Fetch PR Times Feed.
  *
+ * @param string $admin_story_url Admin Story URL.
+
  * @return bool|WP_Error
  */
 function fetch( $admin_story_url ) {
