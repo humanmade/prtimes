@@ -8,6 +8,8 @@
 namespace HM\PR_Times\Story;
 
 use Altis;
+use function HM\PR_Times\create_and_get_author_user_id;
+use function HM\PR_Times\get_story_category_id;
 use HM\PR_Times;
 use SimplePie;
 use SimplePie_Item;
@@ -79,7 +81,8 @@ function check_last_update( SimplePie $rss ) : bool {
  */
 function parse( array $items ) : bool {
 	$author    = get_user_by( 'slug', PR_Times\STORY_AUTHOR_SLUG );
-	$author_id = ! empty( $author ) ? $author->ID : '';
+	$author_id = ! empty( $author ) ? $author->ID : create_and_get_author_user_id( PR_Times\STORY_AUTHOR_SLUG );
+	
 	$time      = 0;
 
 	$scheduled = false;
@@ -99,6 +102,12 @@ function parse( array $items ) : bool {
 				'image_url'                => (string) get_thumbnail( $item ),
 			],
 		];
+
+		// assign specific category.
+		$category_id = get_story_category_id();
+		if ( empty( $category_id ) ) {
+			$post['post_category'] = [ $category_id ];
+		}
 
 		if ( ! wp_next_scheduled( 'hm_story_post_upsert', [ $post ] ) ) {
 			$scheduled = (bool) wp_schedule_single_event( time() + $time, 'hm_story_post_upsert', [ $post ] );
