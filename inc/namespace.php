@@ -170,6 +170,11 @@ function parse( $items ) {
 			],
 		];
 
+		$category_id = get_pr_times_category_id();
+		if ( ! empty( $category_id ) ) {
+			$post['post_category'] = [ $category_id ];
+		}
+
 		if ( ! wp_next_scheduled( 'hm_prtimes_post_upsert', [ $post ] ) ) {
 			wp_schedule_single_event( time(), 'hm_prtimes_post_upsert', [ $post ] );
 			$time += 15;
@@ -203,12 +208,6 @@ function upsert( $item = [] ) {
 
 	if ( is_wp_error( $post_id ) ) {
 		return new WP_Error( 'pr-times', $post_id->get_error_message() );
-	}
-
-	$category_id = get_press_events_category_id();
-
-	if ( ! empty( $category_id ) ) {
-		wp_set_post_categories( $post_id, [ $category_id ] );
 	}
 
 	update_user_meta( $item['post_author'], 'prtimes_last_published_date', time() );
@@ -319,4 +318,119 @@ function get_press_events_category_id(): ?int {
 	}
 
 	return $category->term_id;
+}
+
+
+/**
+ * Get Story Category ID.
+ *
+ * @return null|int
+ */
+function get_story_category_id(): ?int {
+	$category_slug = Altis\get_config()['modules']['rs']['admin-story']['category'] ?? 'story'; // Default value.
+	if ( empty( $category_slug ) ) {
+		return null;
+	}
+	return get_custom_category_id( $category_slug );
+}
+
+/**
+ * Get Pr Times Category ID.
+ *
+ * @return null|int
+ */
+function get_pr_times_category_id(): ?int {
+	$category_slug = Altis\get_config()['modules']['rs']['pr-times']['category'] ?? 'prtimes'; // Default value.
+
+	if ( empty( $category_slug ) ) {
+		return null;
+	}
+	return get_custom_category_id( $category_slug );
+}
+
+/**
+ * Get Press Events Category ID.
+ *
+ * @return null|int
+ */
+function get_press_events_category_id(): ?int {
+	$category_slug = Altis\get_config()['modules']['rs']['press-events']['category'] ?? 'press-events'; // Default value.
+	if ( empty( $category_slug ) ) {
+		return null;
+	}
+	return get_custom_category_id( $category_slug );
+}
+
+/**
+ * Get the custom category ID with specific slug.
+ * Creates the new term if it doesn't exist.
+ *
+ * @param string $slug Slug of the category term
+ * @return null|int
+ */
+function get_custom_category_id( string $slug ): ?int {
+
+	if ( empty( $slug ) ) {
+		return null;
+	}
+
+	$category = get_term_by( 'slug', $slug, 'category' );
+
+	if ( ! $category instanceof \WP_Term ) {
+		// Insert the term.
+		$result = wp_insert_term( $slug, 'category', [] );
+		if ( is_wp_error( $result ) ) {
+			return null;
+		} else {
+			return $result['term_id'];
+		}
+	}
+
+	return $category->term_id;
+}
+
+/**
+ * Gets user ID by slug and creates one if does not exists.
+ *
+ * @param string $slug slug of the user
+ * @return mixed
+ */
+function create_and_get_author_user_id( string $slug ): mixed {
+	$author = get_user_by( 'slug', $slug );
+
+	if ( ! empty( $author->ID ) ) {
+		return $author->ID;
+	}
+
+	// User doesn't exist, create the user.
+	$new_user_data = [
+		'user_login' => $slug,
+		'user_pass' => wp_generate_password(),
+		'user_nicename' => $slug,
+		'user_email' => '',
+		'display_name' => 'PRTimes',
+	];
+
+	if ( is_multisite() ) {
+		// Create the user in the network and add to the current site.
+		$user_id = wpmu_create_user( $new_user_data['user_login'], $new_user_data['user_pass'], $new_user_data['user_email'] );
+
+		if ( empty( $user_id ) ) {
+			return '';
+		}
+		// Get the current site's ID.
+		$current_site_id = get_current_blog_id();
+
+		// Add the user to the current site.
+		add_user_to_blog( $current_site_id, $user_id, 'author' );
+	} else {
+		// Create the user.
+		$user_id = wp_insert_user( $new_user_data );
+	}
+
+	if ( is_wp_error( $user_id ) ) {
+		return '';
+	}
+
+	return $user_id;
 }
