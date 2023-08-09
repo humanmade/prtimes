@@ -171,7 +171,7 @@ function parse( $items ) {
 		];
 
 		$category_id = get_pr_times_category_id();
-		if ( empty( $category_id ) ) {
+		if ( ! empty( $category_id ) ) {
 			$post['post_category'] = [ $category_id ];
 		}
 

@@ -103,7 +103,7 @@ function parse( array $items ) :bool {
 
 		// assign specific category.
 		$category_id = get_press_events_category_id();
-		if ( empty( $category_id ) ) {
+		if ( ! empty( $category_id ) ) {
 			$post['post_category'] = [ $category_id ];
 		}
 
