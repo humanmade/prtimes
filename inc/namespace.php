@@ -216,7 +216,9 @@ function upsert( $item = [] ) {
 		return;
 	}
 
-	if ( $post_meta['type'] === 'update' ) {
+	$update = $post_meta['type'] === 'update';
+
+	if ( $update ) {
 		$item['ID'] = $post_meta['post_id'];
 	}
 
