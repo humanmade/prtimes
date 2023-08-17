@@ -27,6 +27,11 @@ const POST_STATUS = 'inherit-prtimesimage';
  * Plugin bootstrapper
  */
 function bootstrap() {
+	// If plugin features are not enabled, escape early.
+	if ( ! is_plugin_functionality_enabled() ) {
+		return;
+	}
+
 	add_action( 'init', __NAMESPACE__ . '\\register' );
 	add_action( 'admin_init', __NAMESPACE__ . '\\schedule' );
 
@@ -43,6 +48,17 @@ function bootstrap() {
 	add_action( 'hm_story_post_upsert', __NAMESPACE__ . '\\upsert' );
 
 	add_action( 'hm_prtimes_attachment_upload', __NAMESPACE__ . '\\Attachments\\upload_thumbnail_media', 10, 2 );
+}
+
+/**
+ * Checks if the plugin functionality is enabled.
+ * Defaults to true.
+ * Provided here so that it can be overridden in the theme or plugin if needed.
+ *
+ * @return bool
+ */
+function is_plugin_functionality_enabled(): bool {
+	return (boolean) apply_filters( 'hm_prtimes_plugin_functionality_enabled', true );
 }
 
 /**
@@ -211,6 +227,15 @@ function upsert( $item = [] ) {
 	}
 
 	update_user_meta( $item['post_author'], 'prtimes_last_published_date', time() );
+
+	/**
+	 * Fires after a post is inserted or updated, categories and relevant meta are updated.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param array $item    Array of the data that was fetched from PRTimes, which was used to create the post.
+	 * @param boolean $update   Whether this is an update or not.
+	 */
+	do_action( 'hm_prtimes_after_post_insert', $post_id, $item, $update );
 }
 
 /**
