@@ -330,23 +330,6 @@ function is_feed_enabled( $feed ): bool {
 }
 
 /**
- * Get Press Events Category ID.
- *
- * @return null|int
- */
-function get_press_events_category_id(): ?int {
-	$category_name = 'Press Events';
-	$category = get_term_by( 'name', $category_name, 'category' );
-
-	if ( ! $category instanceof WP_Term ) {
-		return null;
-	}
-
-	return $category->term_id;
-}
-
-
-/**
  * Get Story Category ID.
  *
  * @return null|int
