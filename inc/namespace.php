@@ -216,7 +216,9 @@ function upsert( $item = [] ) {
 		return;
 	}
 
-	if ( $post_meta['type'] === 'update' ) {
+	$update = $post_meta['type'] === 'update';
+
+	if ( $update ) {
 		$item['ID'] = $post_meta['post_id'];
 	}
 
@@ -328,23 +330,6 @@ function get_admin_story_url(): ?string {
 function is_feed_enabled( $feed ): bool {
 	return Altis\get_config()['modules']['rs'][ $feed ]['enabled'] ?? false;
 }
-
-/**
- * Get Press Events Category ID.
- *
- * @return null|int
- */
-function get_press_events_category_id(): ?int {
-	$category_name = 'Press Events';
-	$category = get_term_by( 'name', $category_name, 'category' );
-
-	if ( ! $category instanceof WP_Term ) {
-		return null;
-	}
-
-	return $category->term_id;
-}
-
 
 /**
  * Get Story Category ID.
