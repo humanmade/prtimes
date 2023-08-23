@@ -89,7 +89,6 @@ function parse( array $items ) : bool {
 
 	foreach ( $items as $item ) {
 		$post = [
-			'ID'           => 0,
 			'post_title'   => (string) $item->get_title(),
 			'post_author'  => $author_id,
 			'post_date'    => (string) $item->get_date( 'Y-m-d H:i:s' ),
