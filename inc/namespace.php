@@ -58,7 +58,7 @@ function bootstrap() {
  * @return bool
  */
 function is_plugin_functionality_enabled(): bool {
-	return (boolean) apply_filters( 'hm_prtimes_plugin_functionality_enabled', true );
+	return (boolean) apply_filters( 'hm_prtimes_plugin_functionality_enabled', false );
 }
 
 /**
