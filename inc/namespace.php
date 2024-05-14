@@ -166,7 +166,36 @@ function check_last_update( $feed ) {
 function parse( $items ) {
 	$author    = get_user_by( 'slug', AUTHOR_SLUG );
 	$author_id = ! empty( $author ) ? $author->ID : '';
-	$time = 0;
+	$time = time();
+
+	// Get all item links
+	$links = wp_list_pluck( $items, 'link' );
+
+	// SQL Query to get all posts with the same ref_id
+	global $wpdb;
+	$existing_posts = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'prtimes_ref_id' AND meta_value IN (%s)",
+			implode( ',', $links )
+		)
+	);
+
+	// Exisiting links is an array of key: meta_value, value: post_id
+	$existing_links = wp_list_pluck( $existing_posts, 'post_id', 'meta_value' );
+
+	$existing_post_ids = wp_list_pluck( $existing_posts, 'post_id' );
+	$existing_last_updated = [];
+
+	if ( ! empty( $existing_post_ids ) ) {
+		// Get prtimes_last_updated for all existing posts.
+		$existing_last_updated = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'prtimes_last_updated' AND post_id IN (%s)",
+				implode( ',', $existing_post_ids )
+			)
+		);
+		$existing_last_updated = wp_list_pluck( $existing_last_updated, 'meta_value', 'post_id' );
+	}
 
 	foreach ( $items as $item ) {
 		$content = $item->children( 'content', true );
@@ -186,13 +215,26 @@ function parse( $items ) {
 			],
 		];
 
+		// Check if the post already exists.
+		if ( array_key_exists( (string) $item->link, $existing_links ) ) {
+			$post_id = $existing_links[ (string) $item->link ];
+
+			$post_last_updated = $existing_last_updated[ $post_id ];
+			if ( $post_last_updated === $item->LastBuildDate ) {
+				continue; // Don't do anything.
+			}
+
+			// Update post.
+			$post['ID'] = $post_id;
+		}
+
 		$category_id = get_pr_times_category_id();
 		if ( ! empty( $category_id ) ) {
 			$post['post_category'] = [ $category_id ];
 		}
 
 		if ( ! wp_next_scheduled( 'hm_prtimes_post_upsert', [ $post ] ) ) {
-			wp_schedule_single_event( time(), 'hm_prtimes_post_upsert', [ $post ] );
+			wp_schedule_single_event( $time, 'hm_prtimes_post_upsert', [ $post ] );
 			$time += 15;
 		}
 	}
@@ -206,22 +248,6 @@ function parse( $items ) {
  * @return void|WP_Error
  */
 function upsert( $item = [] ) {
-	// Check if Post exists.
-	$post_meta = check_post_exists(
-		$item['meta_input']['prtimes_ref_id'],
-		$item['meta_input']['prtimes_last_updated']
-	);
-
-	if ( $post_meta === false ) {
-		return;
-	}
-
-	$update = $post_meta['type'] === 'update';
-
-	if ( $update ) {
-		$item['ID'] = $post_meta['post_id'];
-	}
-
 	$post_id = wp_insert_post( $item );
 
 	if ( is_wp_error( $post_id ) ) {
