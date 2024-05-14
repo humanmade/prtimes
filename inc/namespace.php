@@ -166,7 +166,7 @@ function check_last_update( $feed ) {
 function parse( $items ) {
 	$author    = get_user_by( 'slug', AUTHOR_SLUG );
 	$author_id = ! empty( $author ) ? $author->ID : '';
-	$time = 0;
+	$time = time();
 
 	foreach ( $items as $item ) {
 		$content = $item->children( 'content', true );
@@ -192,7 +192,7 @@ function parse( $items ) {
 		}
 
 		if ( ! wp_next_scheduled( 'hm_prtimes_post_upsert', [ $post ] ) ) {
-			wp_schedule_single_event( time(), 'hm_prtimes_post_upsert', [ $post ] );
+			wp_schedule_single_event( $time, 'hm_prtimes_post_upsert', [ $post ] );
 			$time += 15;
 		}
 	}
