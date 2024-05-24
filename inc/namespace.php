@@ -211,7 +211,6 @@ function parse( $items ) {
 		$content = $item->children( 'content', true );
 
 		$post = [
-			'ID'           => 0,
 			'post_title'   => (string) $item->title,
 			'post_author'  => $author_id,
 			'post_date'    => (string) $item->date,
