@@ -164,19 +164,24 @@ function check_last_update( $feed ) {
  * @param object $items Items in feed.
  */
 function parse( $items ) {
-	$author    = get_user_by( 'slug', AUTHOR_SLUG );
+	$author = get_user_by( 'slug', AUTHOR_SLUG );
 	$author_id = ! empty( $author ) ? $author->ID : '';
 	$time = time();
 
-	// Get all item links
-	$links = wp_list_pluck( $items, 'link' );
+	$links = [];
+	// Get all item links which is the prtimes_ref_id.
+	foreach ( $items as $item ) {
+		$links[] = (string) $item->link;
+	}
 
 	// SQL Query to get all posts with the same ref_id
 	global $wpdb;
+	$placeholder = implode( ',', array_fill( 0, count( $links ), '%s' ) );
+
 	$existing_posts = $wpdb->get_results(
 		$wpdb->prepare(
-			"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'prtimes_ref_id' AND meta_value IN (%s)",
-			implode( ',', $links )
+			"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'prtimes_ref_id' AND meta_value IN ($placeholder)",
+			...$links
 		)
 	);
 
@@ -188,14 +193,19 @@ function parse( $items ) {
 
 	if ( ! empty( $existing_post_ids ) ) {
 		// Get prtimes_last_updated for all existing posts.
+		$placeholder = implode( ',', array_fill( 0, count( $existing_post_ids ), '%s' ) );
 		$existing_last_updated = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'prtimes_last_updated' AND post_id IN (%s)",
-				implode( ',', $existing_post_ids )
+				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'prtimes_last_updated' AND post_id IN ($placeholder)",
+				...$existing_post_ids
 			)
 		);
+
 		$existing_last_updated = wp_list_pluck( $existing_last_updated, 'meta_value', 'post_id' );
 	}
+
+	// Get category id.
+	$category_id = get_pr_times_category_id();
 
 	foreach ( $items as $item ) {
 		$content = $item->children( 'content', true );
@@ -220,7 +230,7 @@ function parse( $items ) {
 			$post_id = $existing_links[ (string) $item->link ];
 
 			$post_last_updated = $existing_last_updated[ $post_id ];
-			if ( $post_last_updated === $item->LastBuildDate ) {
+			if ( $post_last_updated === (string) $item->LastBuildDate ) {
 				continue; // Don't do anything.
 			}
 
@@ -228,7 +238,6 @@ function parse( $items ) {
 			$post['ID'] = $post_id;
 		}
 
-		$category_id = get_pr_times_category_id();
 		if ( ! empty( $category_id ) ) {
 			$post['post_category'] = [ $category_id ];
 		}
@@ -255,6 +264,8 @@ function upsert( $item = [] ) {
 	}
 
 	update_user_meta( $item['post_author'], 'prtimes_last_published_date', time() );
+
+	$update = $item['ID'] !== 0;
 
 	/**
 	 * Fires after a post is inserted or updated, categories and relevant meta are updated.
