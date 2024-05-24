@@ -225,6 +225,10 @@ function parse( $items ) {
 			],
 		];
 
+		if ( ! empty( $category_id ) ) {
+			$post['post_category'] = [ $category_id ];
+		}
+
 		// Check if the post already exists.
 		if ( array_key_exists( (string) $item->link, $existing_links ) ) {
 			$post_id = $existing_links[ (string) $item->link ];
@@ -236,10 +240,6 @@ function parse( $items ) {
 
 			// Update post.
 			$post['ID'] = $post_id;
-		}
-
-		if ( ! empty( $category_id ) ) {
-			$post['post_category'] = [ $category_id ];
 		}
 
 		if ( ! wp_next_scheduled( 'hm_prtimes_post_upsert', [ $post ] ) ) {
