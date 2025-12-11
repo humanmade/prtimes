@@ -210,9 +210,17 @@ function parse( $items ) {
 	foreach ( $items as $item ) {
 		$content = $item->children( 'content', true );
 
+		/**
+		 *  Filter the post title before inserting into WP.
+		 *
+		 * @param string $post_title The post title.
+		 * @param object $item       The feed item.
+		 */
+		$post_title = apply_filters( 'hm_prtimes_post_title', (string) $item->title, $item );
+
 		$post = [
 			'ID'           => 0,
-			'post_title'   => (string) $item->title,
+			'post_title'   => $post_title,
 			'post_author'  => $author_id,
 			'post_date'    => (string) $item->date,
 			'post_status'  => 'publish',
